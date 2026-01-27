@@ -8,8 +8,11 @@ public class codeforparticle : MonoBehaviour
 
     private void Start()
     {
+        // Get the XRSimpleInteractable component on this GameObject
         GetComponent<XRSimpleInteractable>()
+            // Event triggered when the object is selected (pressed)
             .selectEntered
+            // Register the OnPressed method as a listener
             .AddListener(OnPressed);
     }
 

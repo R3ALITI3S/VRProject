@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using static UnityEngine.InputSystem.LowLevel.InputStateHistory;
 
 [AddComponentMenu("Nokobot/Modern Guns/Simple Shoot")]
 public class SimpleShoot : MonoBehaviour
@@ -25,19 +26,24 @@ public class SimpleShoot : MonoBehaviour
 
     public AudioSource source;
     public AudioClip pewsound;
+    public AudioClip reload;
+    public AudioClip noAmmo;
 
     public Magazine magazine;
-    public XRBaseInteractor SockerInteractor;
+    public XRBaseInteractor SocketInteractor;
 
-    public void AddMagazine(XRBaseInteractable interactable)
+    public void AddMagazine(SelectEnterEventArgs args)
     {
 
+        magazine = args.interactableObject.transform.GetComponent<Magazine>();
+        source.PlayOneShot(reload);
     }
-
-    public void RemoveMagazine() 
+    public void RemoveMagazine(SelectExitEventArgs args)
     {
-
+        magazine = null;
+        source.PlayOneShot(reload);
     }
+
 
     public void slide()
     {
@@ -53,19 +59,34 @@ public class SimpleShoot : MonoBehaviour
         if (gunAnimator == null)
             gunAnimator = GetComponentInChildren<Animator>();
 
-        //ckerInteractor.SelectEnterEventArgs.addListener(AddMagazine);
+        SocketInteractor.selectEntered.AddListener(AddMagazine);
+        SocketInteractor.selectExited.AddListener(RemoveMagazine);
     }
 
     public void PullTheTrigger()
     {
-        // pew pew go to Handgun to set further up
-        gunAnimator.SetTrigger("Fire");
+        if (magazine && magazine.numberOfBullet > 0)
+        {
+            // Trigger the gun fire animation
+            gunAnimator.SetTrigger("Fire");
+
+            // Immediately shoot and eject casing
+            Shoot();
+            CasingRelease();
+        }
+        else
+        {
+            source.PlayOneShot(noAmmo);
+        }
     }
 
 
-    //This function creates the bullet behavior
-    void Shoot()
+
+//This function creates the bullet behavior
+void Shoot()
     {
+        magazine.numberOfBullet--;
+
         source.PlayOneShot(pewsound); // creates sound
 
         if (muzzleFlashPrefab)
